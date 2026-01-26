@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import type { Message as MessageType } from "@/lib/types";
 import ReferenceCard from "@/components/ReferenceCard";
-import type { Components } from "react-markdown";
+
 
 type MessageProps = {
   message: MessageType;
@@ -13,7 +13,7 @@ type MessageProps = {
 function TextWithCitations({ children }: { children: string }) {
   // Split text by citation pattern [1], [2], etc.
   const parts = children.split(/(\[\d+\])/g);
-  
+
   return (
     <>
       {parts.map((part, index) => {
@@ -51,7 +51,7 @@ function processChildren(children: React.ReactNode): React.ReactNode {
   if (typeof children === 'string') {
     return <TextWithCitations>{children}</TextWithCitations>;
   }
-  
+
   if (Array.isArray(children)) {
     return children.map((child, index) => {
       if (typeof child === 'string') {
@@ -60,7 +60,7 @@ function processChildren(children: React.ReactNode): React.ReactNode {
       return child;
     });
   }
-  
+
   return children;
 }
 
@@ -81,11 +81,10 @@ export default function Message({
         )}
         <div className="space-y-3">
           <div
-            className={`rounded-2xl px-4 py-3 text-sm shadow-soft ${
-              isUser
+            className={`rounded-2xl px-4 py-3 text-sm shadow-soft ${isUser
                 ? "bg-slate-900 text-white"
                 : "bg-white text-slate-800"
-            }`}
+              }`}
           >
             {isUser ? (
               message.content
