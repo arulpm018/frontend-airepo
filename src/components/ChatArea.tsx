@@ -3,6 +3,7 @@ import type { Message as MessageType, SelectedPaper, ActiveFilters } from "@/lib
 import Message from "@/components/Message";
 import InputBox from "@/components/InputBox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Wifi } from "lucide-react";
 
 type ChatAreaProps = {
   userId: string;
@@ -41,12 +42,12 @@ export default function ChatArea({
     if (isLoadingSession) return; // Don't scroll while loading
 
     const messageCountDiff = messages.length - prevMessagesCount;
-    
+
     // If messages increased by more than 2, it's a session load
     // Scroll to last user message so user sees their question + AI response
     if (messageCountDiff > 2 && lastUserMessageRef.current) {
       setTimeout(() => {
-        lastUserMessageRef.current?.scrollIntoView({ 
+        lastUserMessageRef.current?.scrollIntoView({
           behavior: "smooth",
           block: "start" // Align to top of viewport
         });
@@ -57,7 +58,7 @@ export default function ChatArea({
       if (lastMessage?.role === "assistant" && lastAssistantMessageRef.current) {
         // Scroll to top of assistant message, not bottom
         setTimeout(() => {
-          lastAssistantMessageRef.current?.scrollIntoView({ 
+          lastAssistantMessageRef.current?.scrollIntoView({
             behavior: "smooth",
             block: "start" // Align to top of viewport
           });
@@ -71,7 +72,7 @@ export default function ChatArea({
   return (
     <section className="flex flex-1 flex-col relative h-screen">
       {/* Scrollable messages area */}
-      <div 
+      <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto px-4 pb-6 pt-6 md:px-8"
       >
@@ -82,10 +83,33 @@ export default function ChatArea({
             <Skeleton className="h-16 w-2/3" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center text-sm text-slate-500">
-            <div className="max-w-sm rounded-lg border border-dashed border-slate-200 bg-white px-6 py-6 shadow-soft">
-              Mulai percakapan dengan menanyakan topik penelitian yang kamu
-              butuhkan.
+          <div className="flex h-full flex-col items-center justify-center p-4">
+            <div className="max-w-md w-full space-y-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 text-slate-900">
+                  <Search className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                  Mulai Pencarian
+                </h3>
+                <p className="text-slate-500">
+                  Mulai percakapan dengan menanyakan topik penelitian yang kamu butuhkan.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-sm text-blue-900">
+                <div className="flex gap-3">
+                  <div className="shrink-0">
+                    <Wifi className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="space-y-1 text-left">
+                    <p className="font-medium text-blue-700">Koneksi Diperlukan</p>
+                    <p className="text-blue-600/90 leading-relaxed">
+                      Untuk dapat menggunakan fitur chat, pastikan perangkat kamu terkoneksi dengan wifi kampus <span className="font-semibold">ipb-access</span> atau menggunakan <span className="font-semibold">OpenVPN IPB</span>.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -93,18 +117,18 @@ export default function ChatArea({
             {messages.map((message, index) => {
               // Find last user message for scroll target
               const lastUserMessageIndex = messages.map(m => m.role).lastIndexOf("user");
-              const isLastUserMessage = 
-                message.role === "user" && 
+              const isLastUserMessage =
+                message.role === "user" &&
                 index === lastUserMessageIndex;
-              
+
               // Find last assistant message for scroll target
               const lastAssistantMessageIndex = messages.map(m => m.role).lastIndexOf("assistant");
-              const isLastAssistantMessage = 
-                message.role === "assistant" && 
+              const isLastAssistantMessage =
+                message.role === "assistant" &&
                 index === lastAssistantMessageIndex;
-              
+
               return (
-                <div 
+                <div
                   key={message.id}
                   ref={isLastUserMessage ? lastUserMessageRef : (isLastAssistantMessage ? lastAssistantMessageRef : null)}
                 >
