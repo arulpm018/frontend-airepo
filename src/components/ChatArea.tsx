@@ -3,7 +3,8 @@ import type { Message as MessageType, SelectedPaper, ActiveFilters } from "@/lib
 import Message from "@/components/Message";
 import InputBox from "@/components/InputBox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Wifi } from "lucide-react";
+import { Search, Wifi, PanelLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type ChatAreaProps = {
   userId: string;
@@ -12,10 +13,12 @@ type ChatAreaProps = {
   isSending: boolean;
   isLoadingSession: boolean;
   filters: ActiveFilters;
+  isSidebarOpen: boolean;
   onTogglePaper: (paperId: string, title: string) => void;
   onSendMessage: (message: string) => void;
   onRemovePaper: (paperId: string) => void;
   onFiltersChange: (filters: ActiveFilters) => void;
+  onToggleSidebar: () => void;
 };
 
 export default function ChatArea({
@@ -25,10 +28,12 @@ export default function ChatArea({
   isSending,
   isLoadingSession,
   filters,
+  isSidebarOpen,
   onTogglePaper,
   onSendMessage,
   onRemovePaper,
   onFiltersChange,
+  onToggleSidebar,
 }: ChatAreaProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const lastUserMessageRef = useRef<HTMLDivElement | null>(null);
@@ -70,7 +75,22 @@ export default function ChatArea({
   }, [messages, isLoadingSession, prevMessagesCount]);
 
   return (
-    <section className="flex flex-1 flex-col relative h-screen">
+    <section className="flex flex-1 flex-col relative h-screen transition-all duration-300">
+      {/* Header / Toggle Button */}
+      {!isSidebarOpen && (
+        <div className="absolute top-4 left-4 z-20">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSidebar}
+            className="h-8 w-8 text-slate-500 hover:text-slate-900"
+            title="Open sidebar"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
+
       {/* Scrollable messages area */}
       <div
         ref={scrollContainerRef}

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, PanelLeft } from "lucide-react";
 import type { Session } from "@/lib/types";
 import { formatTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ type SidebarProps = {
   isLoading: boolean;
   onNewChat: () => void;
   onSelectSession: (sessionId: number) => void;
+  onToggleSidebar: () => void;
 };
 
 export default function Sidebar({
@@ -19,6 +20,7 @@ export default function Sidebar({
   isLoading,
   onNewChat,
   onSelectSession,
+  onToggleSidebar,
 }: SidebarProps) {
   // Debug: Log sessions state changes
   useEffect(() => {
@@ -29,11 +31,20 @@ export default function Sidebar({
     });
   }, [sessions, isLoading]);
   return (
-    <aside className="flex h-screen w-72 shrink-0 flex-col border-r border-slate-200 bg-white">
+    <aside className="flex h-screen w-72 shrink-0 flex-col border-r border-slate-200 bg-white transition-all duration-300">
       {/* Header - fixed */}
       <div className="shrink-0 border-b border-slate-200">
-        <div className="px-4 py-4">
+        <div className="flex items-center justify-between px-4 py-4">
           <h1 className="text-lg font-semibold text-slate-900">AI Repository IPB</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSidebar}
+            className="h-8 w-8 text-slate-500 hover:text-slate-900"
+            title="Close sidebar"
+          >
+            <PanelLeft className="h-5 w-5" />
+          </Button>
         </div>
 
         <div className="px-4 pb-3">
@@ -67,19 +78,17 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => onSelectSession(session.id)}
-                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${
-                      isActive
+                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${isActive
                         ? "border-slate-900 bg-slate-900 text-white shadow-soft"
                         : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <div className="truncate font-medium">
                       {session.title || "Untitled chat"}
                     </div>
                     <div
-                      className={`mt-1 text-xs ${
-                        isActive ? "text-slate-200" : "text-slate-500"
-                      }`}
+                      className={`mt-1 text-xs ${isActive ? "text-slate-200" : "text-slate-500"
+                        }`}
                     >
                       {formatTimestamp(session.updated_at)}
                     </div>

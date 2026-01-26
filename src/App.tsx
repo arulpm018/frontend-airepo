@@ -29,6 +29,11 @@ export default function App() {
   const [isSessionsLoading, setIsSessionsLoading] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
 
   const loadSessions = useCallback(async () => {
     console.log("[App] loadSessions START - userId:", userId);
@@ -99,14 +104,14 @@ export default function App() {
       const message =
         error instanceof Error ? error.message : "Gagal memuat chat.";
       console.error("[Chat] Failed to load session:", sessionId, error);
-      
+
       // Check if it's a backend error
       if (message.includes("500") || message.includes("Internal")) {
         toast.error(`Backend error saat load session ${sessionId}. Coba session lain.`);
       } else {
         toast.error(`Gagal load session: ${message}`);
       }
-      
+
       // Reset to new chat on error
       setCurrentSessionId(null);
       setCurrentMessages([]);
@@ -218,13 +223,16 @@ export default function App() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar
-        sessions={sessions}
-        currentSessionId={currentSessionId}
-        isLoading={isSessionsLoading}
-        onNewChat={handleNewChat}
-        onSelectSession={handleSelectSession}
-      />
+      {isSidebarOpen && (
+        <Sidebar
+          sessions={sessions}
+          currentSessionId={currentSessionId}
+          isLoading={isSessionsLoading}
+          onNewChat={handleNewChat}
+          onSelectSession={handleSelectSession}
+          onToggleSidebar={handleToggleSidebar}
+        />
+      )}
       <ChatArea
         userId={userId}
         messages={currentMessages}
@@ -232,10 +240,12 @@ export default function App() {
         isSending={isSending}
         isLoadingSession={isSessionLoading}
         filters={filters}
+        isSidebarOpen={isSidebarOpen}
         onTogglePaper={handleTogglePaper}
         onSendMessage={handleSendMessage}
         onRemovePaper={handleRemovePaper}
         onFiltersChange={setFilters}
+        onToggleSidebar={handleToggleSidebar}
       />
       <Toaster position="top-right" richColors />
     </div>
