@@ -7,8 +7,6 @@ const BASE_URL =
 
 // Debug: Log BASE_URL and all env vars on app start
 if (import.meta.env.DEV) {
-  console.log("🔗 API Base URL:", BASE_URL);
-  console.log("📋 Raw VITE_API_BASE_URL:", `"${import.meta.env.VITE_API_BASE_URL}"`);
   console.log("👤 User ID:", import.meta.env.VITE_USER_ID ?? "user_12345");
 }
 
@@ -36,12 +34,9 @@ type SendMessageResponse = {
 
 async function apiFetch<T>(path: string, userId: string, init?: RequestInit) {
   const url = `${BASE_URL}${path}`;
-  
-  // Debug log API calls in development
-  if (import.meta.env.DEV) {
-    console.log(`🌐 ${init?.method || "GET"} ${url}`);
-  }
-  
+
+
+
   try {
     const response = await fetch(url, {
       ...init,
@@ -60,7 +55,7 @@ async function apiFetch<T>(path: string, userId: string, init?: RequestInit) {
     }
 
     const contentType = response.headers.get("content-type");
-    
+
     // Check if response is JSON
     if (!contentType?.includes("application/json")) {
       const text = await response.text();
@@ -86,7 +81,7 @@ async function apiFetch<T>(path: string, userId: string, init?: RequestInit) {
     console.error(`❌ API Error [${init?.method || "GET"} ${path}]:`, error);
     if (error instanceof TypeError && error.message.includes("fetch")) {
       throw new Error(
-        `Network error: Tidak dapat terhubung ke ${url}`
+        "Server sedang mati atau gangguan"
       );
     }
     throw error;
@@ -95,7 +90,7 @@ async function apiFetch<T>(path: string, userId: string, init?: RequestInit) {
 
 export async function getSessions(userId: string, limit = 50) {
   console.log("[API] getSessions called with userId:", userId, "limit:", limit);
-  
+
   // Use trailing slash directly to avoid FastAPI redirect
   // FastAPI redirects /sessions → /sessions/ which breaks CORS preflight
   try {
@@ -111,7 +106,7 @@ export async function getSessions(userId: string, limit = 50) {
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error("[API] getSessions FAILED:", errorMsg);
-    
+
     // If CORS/redirect error, add helpful message
     if (errorMsg.includes("CORS") || errorMsg.includes("Network error") || errorMsg.includes("Redirect")) {
       console.error(
@@ -122,7 +117,7 @@ export async function getSessions(userId: string, limit = 50) {
         "2. Support both @app.get('/sessions') and @app.get('/sessions/')"
       );
     }
-    
+
     throw error;
   }
 }
@@ -144,11 +139,9 @@ export async function sendMessage(userId: string, payload: SendMessagePayload) {
 // Master data endpoints
 export async function getFaculties(userId: string) {
   const url = `${BASE_URL}/master/faculties`;
-  
-  if (import.meta.env.DEV) {
-    console.log(`🌐 GET ${url}`);
-  }
-  
+
+
+
   const response = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
@@ -156,21 +149,19 @@ export async function getFaculties(userId: string) {
       "ngrok-skip-browser-warning": "true",
     },
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch faculties: ${response.statusText}`);
   }
-  
+
   return (await response.json()) as string[];
 }
 
 export async function getDepartments(userId: string) {
   const url = `${BASE_URL}/master/departments`;
-  
-  if (import.meta.env.DEV) {
-    console.log(`🌐 GET ${url}`);
-  }
-  
+
+
+
   const response = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
@@ -178,11 +169,11 @@ export async function getDepartments(userId: string) {
       "ngrok-skip-browser-warning": "true",
     },
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch departments: ${response.statusText}`);
   }
-  
+
   return (await response.json()) as string[];
 }
 
