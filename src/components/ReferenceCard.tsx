@@ -11,6 +11,7 @@ type ReferenceCardProps = {
   isSelected: boolean;
   onToggle: (paperId: string, title: string) => void;
   showDivider: boolean;
+  messageId: string;
 };
 
 export default function ReferenceCard({
@@ -19,18 +20,18 @@ export default function ReferenceCard({
   isSelected,
   onToggle,
   showDivider,
+  messageId,
 }: ReferenceCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div>
       <div
-        id={`reference-${referenceNumber}`}
-        className={`rounded-xl border px-4 py-3 transition scroll-mt-4 ${
-          isSelected
+        id={`reference-${messageId}-${referenceNumber}`}
+        className={`rounded-xl border px-4 py-3 transition scroll-mt-4 ${isSelected
             ? "border-slate-900 bg-slate-50"
             : "border-slate-200 bg-white"
-        }`}
+          }`}
       >
         <div className="flex items-start gap-3">
           <div className="flex items-center gap-2">
@@ -69,11 +70,10 @@ export default function ReferenceCard({
               <ExternalLink className="h-3 w-3" />
             </a>
             <div
-              className={`animate-expand text-xs text-slate-600 ${
-                expanded
+              className={`animate-expand text-xs text-slate-600 ${expanded
                   ? "max-h-96 opacity-100"
                   : "line-clamp-3 max-h-20 opacity-90"
-              } overflow-hidden`}
+                } overflow-hidden`}
             >
               {reference.abstract}
             </div>

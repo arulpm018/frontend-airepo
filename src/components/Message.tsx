@@ -10,7 +10,7 @@ type MessageProps = {
 };
 
 // Component to render text with clickable citations
-function TextWithCitations({ children }: { children: string }) {
+function TextWithCitations({ children, messageId }: { children: string; messageId: string }) {
   // Split text by citation pattern [1], [2], etc.
   const parts = children.split(/(\[\d+\])/g);
 
@@ -25,7 +25,7 @@ function TextWithCitations({ children }: { children: string }) {
             <button
               key={index}
               onClick={() => {
-                const element = document.getElementById(`reference-${citationNumber}`);
+                const element = document.getElementById(`reference-${messageId}-${citationNumber}`);
                 element?.scrollIntoView({ behavior: "smooth", block: "center" });
                 // Add a highlight effect
                 element?.classList.add("ring-2", "ring-blue-500", "ring-offset-2");
@@ -47,15 +47,15 @@ function TextWithCitations({ children }: { children: string }) {
 }
 
 // Helper to process children and replace citations
-function processChildren(children: React.ReactNode): React.ReactNode {
+function processChildren(children: React.ReactNode, messageId: string): React.ReactNode {
   if (typeof children === 'string') {
-    return <TextWithCitations>{children}</TextWithCitations>;
+    return <TextWithCitations messageId={messageId}>{children}</TextWithCitations>;
   }
 
   if (Array.isArray(children)) {
     return children.map((child, index) => {
       if (typeof child === 'string') {
-        return <TextWithCitations key={index}>{child}</TextWithCitations>;
+        return <TextWithCitations key={index} messageId={messageId}>{child}</TextWithCitations>;
       }
       return child;
     });
@@ -82,8 +82,8 @@ export default function Message({
         <div className="space-y-3">
           <div
             className={`rounded-2xl px-4 py-3 text-sm shadow-soft ${isUser
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-800"
+              ? "bg-slate-900 text-white"
+              : "bg-white text-slate-800"
               }`}
           >
             {isUser ? (
@@ -94,19 +94,19 @@ export default function Message({
                 components={{
                   p: ({ children }) => (
                     <p className="mb-3 last:mb-0">
-                      {processChildren(children)}
+                      {processChildren(children, message.id)}
                     </p>
                   ),
                   ul: ({ children }) => <ul className="mb-3 ml-4 space-y-1">{children}</ul>,
                   ol: ({ children }) => <ol className="mb-3 ml-4 space-y-1">{children}</ol>,
                   li: ({ children }) => (
                     <li className="leading-relaxed">
-                      {processChildren(children)}
+                      {processChildren(children, message.id)}
                     </li>
                   ),
                   strong: ({ children }) => (
                     <strong className="font-semibold">
-                      {processChildren(children)}
+                      {processChildren(children, message.id)}
                     </strong>
                   ),
                   h1: ({ children }) => <h1 className="mb-2 text-lg font-semibold">{children}</h1>,
@@ -138,6 +138,7 @@ export default function Message({
                     isSelected={selectedPaperIds.includes(reference.paper_id)}
                     onToggle={onTogglePaper}
                     showDivider={index !== message.references!.length - 1}
+                    messageId={message.id}
                   />
                 ))}
               </div>
