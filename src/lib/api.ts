@@ -88,13 +88,14 @@ async function apiFetch<T>(path: string, userId: string, init?: RequestInit) {
   }
 }
 
-export async function getSessions(userId: string, limit = 50) {
+export async function getSessions(userId: string, limit?: number) {
   console.log("[API] getSessions called with userId:", userId, "limit:", limit);
 
   // Use trailing slash directly to avoid FastAPI redirect
   // FastAPI redirects /sessions → /sessions/ which breaks CORS preflight
   try {
-    const result = await apiFetch<Session[]>(`/sessions/?limit=${limit}`, userId, {
+    const queryParams = limit ? `?limit=${limit}` : "";
+    const result = await apiFetch<Session[]>(`/sessions/${queryParams}`, userId, {
       method: "GET",
     });
     console.log("[API] getSessions SUCCESS - Response:", result);

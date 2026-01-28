@@ -40,7 +40,7 @@ export default function App() {
     setIsSessionsLoading(true);
     try {
       console.log("[App] Calling getSessions API...");
-      const data = await getSessions(userId, 50);
+      const data = await getSessions(userId);
       console.log("[App] ✅ getSessions returned:", data);
       console.log("[App] ✅ Sessions count:", data.length);
       console.log("[App] ✅ Calling setSessions with data:", data);
