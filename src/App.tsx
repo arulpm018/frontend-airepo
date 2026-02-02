@@ -26,6 +26,7 @@ export default function App() {
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const [selectedPapers, setSelectedPapers] = useState<SelectedPaper[]>([]);
   const [filters, setFilters] = useState<ActiveFilters>(EMPTY_FILTERS);
+  const [searchMode, setSearchMode] = useState<"fast" | "accurate">("fast");
   const [isSessionsLoading, setIsSessionsLoading] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -163,9 +164,11 @@ export default function App() {
         document_type?: string;
         year?: number;
         year_range?: { start: number; end: number };
+        search_mode?: "fast" | "accurate";
       } = {
         query,
         session_id: currentSessionId,
+        search_mode: searchMode,
       };
 
       // Add selected papers if any
@@ -240,6 +243,8 @@ export default function App() {
         isSending={isSending}
         isLoadingSession={isSessionLoading}
         filters={filters}
+        searchMode={searchMode}
+        onSearchModeChange={setSearchMode}
         isSidebarOpen={isSidebarOpen}
         onTogglePaper={handleTogglePaper}
         onSendMessage={handleSendMessage}

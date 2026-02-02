@@ -22,6 +22,7 @@ type SendMessagePayload = {
     start: number;
     end: number;
   };
+  search_mode?: "fast" | "accurate";
 };
 
 type SendMessageResponse = {

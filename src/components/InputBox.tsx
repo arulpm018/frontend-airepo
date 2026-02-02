@@ -5,15 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import SelectedPaperChip from "@/components/SelectedPaperChip";
 import FilterDialog from "@/components/FilterDialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Zap, Target } from "lucide-react";
 
 type InputBoxProps = {
   userId: string;
   selectedPapers: SelectedPaper[];
   isSending: boolean;
   filters: ActiveFilters;
+  searchMode: "fast" | "accurate";
   onSendMessage: (message: string) => void;
   onRemovePaper: (paperId: string) => void;
   onFiltersChange: (filters: ActiveFilters) => void;
+  onSearchModeChange: (mode: "fast" | "accurate") => void;
 };
 
 export default function InputBox({
@@ -21,9 +31,11 @@ export default function InputBox({
   selectedPapers,
   isSending,
   filters,
+  searchMode,
   onSendMessage,
   onRemovePaper,
   onFiltersChange,
+  onSearchModeChange,
 }: InputBoxProps) {
   const [message, setMessage] = useState("");
 
@@ -65,10 +77,29 @@ export default function InputBox({
           />
         </div>
         <div className="flex gap-2">
-          <FilterDialog 
+          <Select value={searchMode} onValueChange={(val) => onSearchModeChange(val as "fast" | "accurate")}>
+            <SelectTrigger className="h-10 w-[110px] px-2 lg:px-3">
+              <SelectValue placeholder="Mode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fast">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-3.5 w-3.5 text-orange-500" />
+                  <span>Fast</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="accurate">
+                <div className="flex items-center gap-2">
+                  <Target className="h-3.5 w-3.5 text-blue-500" />
+                  <span>Accurate</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <FilterDialog
             userId={userId}
-            filters={filters} 
-            onFiltersChange={onFiltersChange} 
+            filters={filters}
+            onFiltersChange={onFiltersChange}
           />
           <Button
             type="button"
@@ -81,9 +112,9 @@ export default function InputBox({
           </Button>
         </div>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <div className="mt-2 text-xs text-slate-500">
         Enter untuk kirim, Shift + Enter untuk baris baru.
-      </p>
+      </div>
     </div>
   );
 }

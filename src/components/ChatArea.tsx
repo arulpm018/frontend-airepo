@@ -13,11 +13,13 @@ type ChatAreaProps = {
   isSending: boolean;
   isLoadingSession: boolean;
   filters: ActiveFilters;
+  searchMode: "fast" | "accurate";
   isSidebarOpen: boolean;
   onTogglePaper: (paperId: string, title: string) => void;
   onSendMessage: (message: string) => void;
   onRemovePaper: (paperId: string) => void;
   onFiltersChange: (filters: ActiveFilters) => void;
+  onSearchModeChange: (mode: "fast" | "accurate") => void;
   onToggleSidebar: () => void;
 };
 
@@ -28,11 +30,13 @@ export default function ChatArea({
   isSending,
   isLoadingSession,
   filters,
+  searchMode,
   isSidebarOpen,
   onTogglePaper,
   onSendMessage,
   onRemovePaper,
   onFiltersChange,
+  onSearchModeChange,
   onToggleSidebar,
 }: ChatAreaProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -184,6 +188,8 @@ export default function ChatArea({
           onSendMessage={onSendMessage}
           onRemovePaper={onRemovePaper}
           onFiltersChange={onFiltersChange}
+          searchMode={searchMode}
+          onSearchModeChange={onSearchModeChange}
         />
       </div>
     </section>
