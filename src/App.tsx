@@ -27,6 +27,7 @@ export default function App() {
   const [selectedPapers, setSelectedPapers] = useState<SelectedPaper[]>([]);
   const [filters, setFilters] = useState<ActiveFilters>(EMPTY_FILTERS);
   const [searchMode, setSearchMode] = useState<"fast" | "accurate">("fast");
+  const [embeddingModel, setEmbeddingModel] = useState<"openai" | "selfhosted">("selfhosted");
   const [isSessionsLoading, setIsSessionsLoading] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -165,10 +166,12 @@ export default function App() {
         year?: number;
         year_range?: { start: number; end: number };
         search_mode?: "fast" | "accurate";
+        embedding_model?: "openai" | "selfhosted";
       } = {
         query,
         session_id: currentSessionId,
         search_mode: searchMode,
+        embedding_model: embeddingModel,
       };
 
       // Add selected papers if any
@@ -244,7 +247,9 @@ export default function App() {
         isLoadingSession={isSessionLoading}
         filters={filters}
         searchMode={searchMode}
+        embeddingModel={embeddingModel}
         onSearchModeChange={setSearchMode}
+        onEmbeddingModelChange={setEmbeddingModel}
         isSidebarOpen={isSidebarOpen}
         onTogglePaper={handleTogglePaper}
         onSendMessage={handleSendMessage}

@@ -23,6 +23,7 @@ type SendMessagePayload = {
     end: number;
   };
   search_mode?: "fast" | "accurate";
+  embedding_model?: "openai" | "selfhosted";
 };
 
 type SendMessageResponse = {

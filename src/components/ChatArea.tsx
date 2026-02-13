@@ -14,12 +14,14 @@ type ChatAreaProps = {
   isLoadingSession: boolean;
   filters: ActiveFilters;
   searchMode: "fast" | "accurate";
+  embeddingModel: "openai" | "selfhosted";
   isSidebarOpen: boolean;
   onTogglePaper: (paperId: string, title: string) => void;
   onSendMessage: (message: string) => void;
   onRemovePaper: (paperId: string) => void;
   onFiltersChange: (filters: ActiveFilters) => void;
   onSearchModeChange: (mode: "fast" | "accurate") => void;
+  onEmbeddingModelChange: (model: "openai" | "selfhosted") => void;
   onToggleSidebar: () => void;
 };
 
@@ -31,12 +33,14 @@ export default function ChatArea({
   isLoadingSession,
   filters,
   searchMode,
+  embeddingModel,
   isSidebarOpen,
   onTogglePaper,
   onSendMessage,
   onRemovePaper,
   onFiltersChange,
   onSearchModeChange,
+  onEmbeddingModelChange,
   onToggleSidebar,
 }: ChatAreaProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -189,7 +193,9 @@ export default function ChatArea({
           onRemovePaper={onRemovePaper}
           onFiltersChange={onFiltersChange}
           searchMode={searchMode}
+          embeddingModel={embeddingModel}
           onSearchModeChange={onSearchModeChange}
+          onEmbeddingModelChange={onEmbeddingModelChange}
         />
       </div>
     </section>

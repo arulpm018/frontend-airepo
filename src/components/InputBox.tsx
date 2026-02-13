@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Zap, Target } from "lucide-react";
+import { Zap, Target, Brain } from "lucide-react";
 
 type InputBoxProps = {
   userId: string;
@@ -20,10 +20,12 @@ type InputBoxProps = {
   isSending: boolean;
   filters: ActiveFilters;
   searchMode: "fast" | "accurate";
+  embeddingModel: "openai" | "selfhosted";
   onSendMessage: (message: string) => void;
   onRemovePaper: (paperId: string) => void;
   onFiltersChange: (filters: ActiveFilters) => void;
   onSearchModeChange: (mode: "fast" | "accurate") => void;
+  onEmbeddingModelChange: (model: "openai" | "selfhosted") => void;
 };
 
 export default function InputBox({
@@ -32,10 +34,12 @@ export default function InputBox({
   isSending,
   filters,
   searchMode,
+  embeddingModel,
   onSendMessage,
   onRemovePaper,
   onFiltersChange,
   onSearchModeChange,
+  onEmbeddingModelChange,
 }: InputBoxProps) {
   const [message, setMessage] = useState("");
 
@@ -92,6 +96,25 @@ export default function InputBox({
                 <div className="flex items-center gap-2">
                   <Target className="h-3.5 w-3.5 text-blue-500" />
                   <span>Accurate</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={embeddingModel} onValueChange={(val) => onEmbeddingModelChange(val as "openai" | "selfhosted")}>
+            <SelectTrigger className="h-10 w-[130px] px-2 lg:px-3">
+              <SelectValue placeholder="Embedding" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="selfhosted">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-3.5 w-3.5 text-purple-500" />
+                  <span>Selfhosted</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="openai">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-3.5 w-3.5 text-green-500" />
+                  <span>OpenAI</span>
                 </div>
               </SelectItem>
             </SelectContent>
