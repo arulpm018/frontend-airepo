@@ -1,0 +1,14 @@
+version: '2.2'
+services:
+  web_#{REPOSITORYNAME}#:
+    image: #{IMAGETAG}#
+    ports:
+      - #{PORTS}#
+    restart: always
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: #{SUBNET}#
