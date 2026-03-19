@@ -1,14 +1,132 @@
-import type { ApiMessage, Reference, Session } from "./types";
+import type { ApiMessage, Reference, Session, User } from "./types";
 
-// Trim and clean BASE_URL to handle accidental spaces in .env
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, "") ??
   "http://localhost:8001/api/v1";
 
-// Debug: Log BASE_URL and all env vars on app start
-if (import.meta.env.DEV) {
-  console.log("👤 User ID:", import.meta.env.VITE_USER_ID ?? "user_12345");
+// ─── Token helpers ─────────────────────────────────────────────────────────
+
+export function getToken(): string | null {
+  return localStorage.getItem("token");
 }
+
+export function getStoredUser(): User | null {
+  const raw = localStorage.getItem("user");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as User;
+  } catch {
+    return null;
+  }
+}
+
+export function saveAuth(token: string, user: User) {
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
+}
+
+export function clearAuth() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+}
+
+export function isTokenValid(): boolean {
+  const token = getToken();
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+// ─── Core fetch wrapper ────────────────────────────────────────────────────
+
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const url = `${BASE_URL}${path}`;
+  const token = getToken();
+
+  try {
+    const response = await fetch(url, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init?.headers ?? {}),
+      },
+    });
+
+    const contentType = response.headers.get("content-type");
+
+    if (!contentType?.includes("application/json")) {
+      const text = await response.text();
+      console.error("Non-JSON response:", text.substring(0, 200));
+      throw new Error(
+        `API mengembalikan ${contentType || "non-JSON"} bukan JSON. Status: ${response.status}`
+      );
+    }
+
+    if (!response.ok) {
+      let message = `${response.status} ${response.statusText}`;
+      try {
+        const data = (await response.json()) as { detail?: string; message?: string };
+        if (data?.detail) message = data.detail;
+        else if (data?.message) message = data.message;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+
+    return (await response.json()) as T;
+  } catch (error) {
+    console.error(`❌ API Error [${init?.method || "GET"} ${path}]:`, error);
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new Error("Server sedang mati atau gangguan");
+    }
+    throw error;
+  }
+}
+
+// ─── Auth ──────────────────────────────────────────────────────────────────
+
+export async function login(username: string, password: string): Promise<{ token: string; user: User }> {
+  const data = await apiFetch<{ access_token: string; token_type: string; user: User }>(
+    "/auth/login",
+    {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    }
+  );
+  return { token: data.access_token, user: data.user };
+}
+
+export async function getProfile(): Promise<User> {
+  return apiFetch<User>("/auth/me");
+}
+
+// ─── Sessions ─────────────────────────────────────────────────────────────
+
+export async function getSessions(limit?: number): Promise<Session[]> {
+  const queryParams = limit ? `?limit=${limit}` : "";
+  return apiFetch<Session[]>(`/sessions/${queryParams}`);
+}
+
+export async function getSessionDetail(sessionId: number) {
+  return apiFetch<{ id: number; title: string; messages: ApiMessage[] }>(
+    `/sessions/${sessionId}`
+  );
+}
+
+export async function deleteSession(sessionId: number) {
+  return apiFetch<{ message: string }>(`/sessions/${sessionId}`, {
+    method: "DELETE",
+  });
+}
+
+// ─── Chat ──────────────────────────────────────────────────────────────────
 
 type SendMessagePayload = {
   query: string;
@@ -22,8 +140,6 @@ type SendMessagePayload = {
     start: number;
     end: number;
   };
-  search_mode?: "fast" | "accurate";
-  embedding_model?: "openai" | "selfhosted";
 };
 
 type SendMessageResponse = {
@@ -34,149 +150,19 @@ type SendMessageResponse = {
   metadata: Record<string, unknown>;
 };
 
-async function apiFetch<T>(path: string, userId: string, init?: RequestInit) {
-  const url = `${BASE_URL}${path}`;
-
-
-
-  try {
-    const response = await fetch(url, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-ID": userId,
-        // Ngrok requires this header to bypass warning page
-        "ngrok-skip-browser-warning": "true",
-        ...(init?.headers ?? {}),
-      },
-    });
-
-    if (import.meta.env.DEV) {
-      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
-      console.log(`📡 Content-Type: ${response.headers.get("content-type")}`);
-    }
-
-    const contentType = response.headers.get("content-type");
-
-    // Check if response is JSON
-    if (!contentType?.includes("application/json")) {
-      const text = await response.text();
-      console.error("Non-JSON response:", text.substring(0, 200));
-      throw new Error(
-        `API mengembalikan ${contentType || "non-JSON"} bukan JSON. Status: ${response.status}`
-      );
-    }
-
-    if (!response.ok) {
-      let message = `${response.status} ${response.statusText}`;
-      try {
-        const data = (await response.json()) as { message?: string };
-        if (data?.message) message = data.message;
-      } catch {
-        // Ignore JSON parse errors for error response
-      }
-      throw new Error(message);
-    }
-
-    return (await response.json()) as T;
-  } catch (error) {
-    console.error(`❌ API Error [${init?.method || "GET"} ${path}]:`, error);
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      throw new Error(
-        "Server sedang mati atau gangguan"
-      );
-    }
-    throw error;
-  }
-}
-
-export async function getSessions(userId: string, limit?: number) {
-  console.log("[API] getSessions called with userId:", userId, "limit:", limit);
-
-  // Use trailing slash directly to avoid FastAPI redirect
-  // FastAPI redirects /sessions → /sessions/ which breaks CORS preflight
-  try {
-    const queryParams = limit ? `?limit=${limit}` : "";
-    const result = await apiFetch<Session[]>(`/sessions/${queryParams}`, userId, {
-      method: "GET",
-    });
-    console.log("[API] getSessions SUCCESS - Response:", result);
-    console.log("[API] Number of sessions:", result.length);
-    if (result.length > 0) {
-      console.log("[API] First session sample:", result[0]);
-    }
-    return result;
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error("[API] getSessions FAILED:", errorMsg);
-
-    // If CORS/redirect error, add helpful message
-    if (errorMsg.includes("CORS") || errorMsg.includes("Network error") || errorMsg.includes("Redirect")) {
-      console.error(
-        "⚠️ FastAPI Auto-Redirect Issue:\n" +
-        "Backend redirect /sessions → /sessions/ breaks CORS preflight.\n\n" +
-        "Fix backend dengan salah satu cara:\n" +
-        "1. app = FastAPI(redirect_slashes=False)\n" +
-        "2. Support both @app.get('/sessions') and @app.get('/sessions/')"
-      );
-    }
-
-    throw error;
-  }
-}
-
-export async function getSessionDetail(userId: string, sessionId: number) {
-  return apiFetch<{ id: number; title: string; messages: ApiMessage[] }>(
-    `/sessions/${sessionId}`,
-    userId
-  );
-}
-
-export async function sendMessage(userId: string, payload: SendMessagePayload) {
-  return apiFetch<SendMessageResponse>("/chat/send", userId, {
+export async function sendMessage(payload: SendMessagePayload): Promise<SendMessageResponse> {
+  return apiFetch<SendMessageResponse>("/chat/send", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-// Master data endpoints
-export async function getFaculties(userId: string) {
-  const url = `${BASE_URL}/master/faculties`;
+// ─── Master data ───────────────────────────────────────────────────────────
 
-
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-ID": userId,
-      "ngrok-skip-browser-warning": "true",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch faculties: ${response.statusText}`);
-  }
-
-  return (await response.json()) as string[];
+export async function getFaculties(): Promise<string[]> {
+  return apiFetch<string[]>("/master/faculties");
 }
 
-export async function getDepartments(userId: string) {
-  const url = `${BASE_URL}/master/departments`;
-
-
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-ID": userId,
-      "ngrok-skip-browser-warning": "true",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch departments: ${response.statusText}`);
-  }
-
-  return (await response.json()) as string[];
+export async function getDepartments(): Promise<string[]> {
+  return apiFetch<string[]>("/master/departments");
 }
-

@@ -1,3 +1,16 @@
+export type User = {
+  username: string;
+  nim: string | null;
+  nama: string | null;
+  email: string | null;
+  mayor: string | null;
+  kode_mayor: string | null;
+  jenjang: string | null;
+  tahun_masuk: number | null;
+  mahasiswa_id: number | null;
+  orang_id: number | null;
+};
+
 export type Reference = {
   rank: number;
   paper_id: string;

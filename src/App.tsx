@@ -2,11 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import { Toaster, toast } from "sonner";
 import Sidebar from "@/components/Sidebar";
 import ChatArea from "@/components/ChatArea";
-import type { Message, SelectedPaper, Session, ActiveFilters } from "@/lib/types";
-import { getSessionDetail, getSessions, sendMessage } from "@/lib/api";
-
-const DEFAULT_USER_ID =
-  import.meta.env.VITE_USER_ID?.trim() ?? "hasrulmalik";
+import LoginPage from "@/components/LoginPage";
+import type { Message, SelectedPaper, Session, ActiveFilters, User } from "@/lib/types";
+import {
+  getSessionDetail,
+  getSessions,
+  sendMessage,
+  login as apiLogin,
+  clearAuth,
+  saveAuth,
+  getStoredUser,
+  isTokenValid,
+} from "@/lib/api";
 
 const EMPTY_FILTERS: ActiveFilters = {
   faculty: null,
@@ -20,82 +27,99 @@ const EMPTY_FILTERS: ActiveFilters = {
 };
 
 export default function App() {
-  const [userId] = useState(DEFAULT_USER_ID);
+  // ─── Auth state ──────────────────────────────────────────────────────────
+  const [user, setUser] = useState<User | null>(() => {
+    // Restore from localStorage on init
+    if (isTokenValid()) return getStoredUser();
+    clearAuth();
+    return null;
+  });
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoginLoading, setIsLoginLoading] = useState(false);
+
+  // ─── Chat state ───────────────────────────────────────────────────────────
   const [sessions, setSessions] = useState<Session[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const [selectedPapers, setSelectedPapers] = useState<SelectedPaper[]>([]);
   const [filters, setFilters] = useState<ActiveFilters>(EMPTY_FILTERS);
-  const [searchMode, setSearchMode] = useState<"fast" | "accurate">("fast");
-  const [embeddingModel, setEmbeddingModel] = useState<"openai" | "selfhosted">("selfhosted");
   const [isSessionsLoading, setIsSessionsLoading] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const handleToggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
+  // ─── Auth handlers ────────────────────────────────────────────────────────
+
+  const handleLogin = async (username: string, password: string) => {
+    setIsLoginLoading(true);
+    setLoginError(null);
+    try {
+      const { token, user: userData } = await apiLogin(username, password);
+      saveAuth(token, userData);
+      setUser(userData);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Login gagal";
+      if (msg.includes("Username atau password salah") || msg.includes("401")) {
+        setLoginError("Username atau password salah");
+      } else if (msg.includes("502") || msg.includes("unreachable")) {
+        setLoginError("Layanan autentikasi IPB sedang bermasalah, coba lagi nanti");
+      } else {
+        setLoginError(msg);
+      }
+    } finally {
+      setIsLoginLoading(false);
+    }
   };
 
-  const loadSessions = useCallback(async () => {
-    console.log("[App] loadSessions START - userId:", userId);
-    setIsSessionsLoading(true);
-    try {
-      console.log("[App] Calling getSessions API...");
-      const data = await getSessions(userId);
-      console.log("[App] ✅ getSessions returned:", data);
-      console.log("[App] ✅ Sessions count:", data.length);
-      console.log("[App] ✅ Calling setSessions with data:", data);
-      setSessions(data);
-      console.log("[App] ✅ setSessions called successfully");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Gagal memuat sesi.";
-      console.error("[App] ❌ loadSessions ERROR:", message, error);
-      // Silent error - only log to console, no toast
-      // Set empty array so UI shows "no sessions"
-      console.log("[App] Setting sessions to empty array due to error");
-      setSessions([]);
-    } finally {
-      console.log("[App] Setting isSessionsLoading to false");
-      setIsSessionsLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    console.log("[App] Component mounted - testing loadSessions");
-    // Test if backend CORS is fixed
-    loadSessions();
-  }, [loadSessions]);
-
-  // Debug: Log sessions state changes
-  useEffect(() => {
-    console.log("[App] 🔄 SESSIONS STATE UPDATED:", {
-      count: sessions.length,
-      sessions: sessions,
-    });
-  }, [sessions]);
-
-  const handleNewChat = () => {
-    console.log("[Chat] New Chat button clicked - resetting session");
-    setCurrentSessionId(null); // Reset to null so next message creates new session
+  const handleLogout = () => {
+    clearAuth();
+    setUser(null);
+    setSessions([]);
+    setCurrentSessionId(null);
     setCurrentMessages([]);
     setSelectedPapers([]);
-    setFilters(EMPTY_FILTERS); // Reset filters on new chat
+    setFilters(EMPTY_FILTERS);
+  };
+
+  // ─── Session helpers ──────────────────────────────────────────────────────
+
+  const loadSessions = useCallback(async () => {
+    setIsSessionsLoading(true);
+    try {
+      const data = await getSessions();
+      setSessions(data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Gagal memuat sesi.";
+      // Token expired / invalid → force logout
+      if (message.includes("401") || message.includes("403") || message.includes("tidak valid")) {
+        handleLogout();
+        return;
+      }
+      setSessions([]);
+    } finally {
+      setIsSessionsLoading(false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (user) loadSessions();
+  }, [user, loadSessions]);
+
+  // ─── Chat handlers ────────────────────────────────────────────────────────
+
+  const handleNewChat = () => {
+    setCurrentSessionId(null);
+    setCurrentMessages([]);
+    setSelectedPapers([]);
+    setFilters(EMPTY_FILTERS);
   };
 
   const handleSelectSession = async (sessionId: number) => {
-    console.log("[Chat] Loading existing session:", sessionId);
-    setCurrentSessionId(sessionId); // Set session_id so messages continue this session
+    setCurrentSessionId(sessionId);
     setSelectedPapers([]);
     setIsSessionLoading(true);
     try {
-      const data = await getSessionDetail(userId, sessionId);
-      console.log("[Chat] Session loaded:", {
-        session_id: data.id,
-        title: data.title,
-        messages_count: data.messages.length,
-      });
+      const data = await getSessionDetail(sessionId);
       setCurrentMessages(
         data.messages.map((message) => ({
           ...message,
@@ -103,18 +127,12 @@ export default function App() {
         }))
       );
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Gagal memuat chat.";
-      console.error("[Chat] Failed to load session:", sessionId, error);
-
-      // Check if it's a backend error
-      if (message.includes("500") || message.includes("Internal")) {
-        toast.error(`Backend error saat load session ${sessionId}. Coba session lain.`);
-      } else {
-        toast.error(`Gagal load session: ${message}`);
+      const message = error instanceof Error ? error.message : "Gagal memuat chat.";
+      if (message.includes("401") || message.includes("403")) {
+        handleLogout();
+        return;
       }
-
-      // Reset to new chat on error
+      toast.error(`Gagal load session: ${message}`);
       setCurrentSessionId(null);
       setCurrentMessages([]);
     } finally {
@@ -125,9 +143,7 @@ export default function App() {
   const handleTogglePaper = (paperId: string, title: string) => {
     setSelectedPapers((prev) => {
       const exists = prev.some((paper) => paper.id === paperId);
-      if (exists) {
-        return prev.filter((paper) => paper.id !== paperId);
-      }
+      if (exists) return prev.filter((paper) => paper.id !== paperId);
       return [...prev, { id: paperId, title }];
     });
   };
@@ -148,14 +164,6 @@ export default function App() {
     setIsSending(true);
 
     try {
-      // Log session state
-      if (currentSessionId === null) {
-        console.log("[Chat] Starting NEW chat session");
-      } else {
-        console.log("[Chat] Continuing existing session:", currentSessionId);
-      }
-
-      // Build payload with filters
       const payload: {
         query: string;
         session_id: number | null;
@@ -165,21 +173,15 @@ export default function App() {
         document_type?: string;
         year?: number;
         year_range?: { start: number; end: number };
-        search_mode?: "fast" | "accurate";
-        embedding_model?: "openai" | "selfhosted";
       } = {
         query,
         session_id: currentSessionId,
-        search_mode: searchMode,
-        embedding_model: embeddingModel,
       };
 
-      // Add selected papers if any
       if (selectedPapers.length > 0) {
         payload.selected_paper_ids = selectedPapers.map((paper) => paper.id);
       }
 
-      // Add filters if set
       if (filters.faculty) payload.faculty = filters.faculty;
       if (filters.department) payload.department = filters.department;
       if (filters.document_type) payload.document_type = filters.document_type;
@@ -191,21 +193,11 @@ export default function App() {
         };
       }
 
-      console.log("[Chat] Sending message with payload:", payload);
+      const response = await sendMessage(payload);
 
-      const response = await sendMessage(userId, payload);
-
-      console.log("[Chat] Response received:", {
-        session_id: response.session_id,
-        message_id: response.message_id,
-        references_count: response.references?.length ?? 0,
-      });
-
-      // Only update session_id if this was a new chat (currentSessionId was null)
       if (currentSessionId === null) {
-        console.log("[Chat] New session created with ID:", response.session_id);
         setCurrentSessionId(response.session_id);
-        await loadSessions(); // Refresh sidebar to show new session
+        await loadSessions();
       }
 
       const assistantMessage: Message = {
@@ -217,48 +209,64 @@ export default function App() {
       };
 
       setCurrentMessages((prev) => [...prev, assistantMessage]);
-      setSelectedPapers([]); // Clear selected papers after send
+      setSelectedPapers([]);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Gagal mengirim pesan.";
+      const message = error instanceof Error ? error.message : "Gagal mengirim pesan.";
+      if (message.includes("401") || message.includes("403")) {
+        handleLogout();
+        return;
+      }
       toast.error(message);
+      // Remove the optimistic user message on error
+      setCurrentMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
     } finally {
       setIsSending(false);
     }
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────
+
+  if (!user) {
+    return (
+      <>
+        <LoginPage
+          onLogin={handleLogin}
+          isLoading={isLoginLoading}
+          error={loginError}
+        />
+        <Toaster position="top-right" richColors />
+      </>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {isSidebarOpen && (
         <Sidebar
+          user={user}
           sessions={sessions}
           currentSessionId={currentSessionId}
           isLoading={isSessionsLoading}
           onNewChat={handleNewChat}
           onSelectSession={handleSelectSession}
-          onToggleSidebar={handleToggleSidebar}
+          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          onLogout={handleLogout}
         />
       )}
       <ChatArea
-        userId={userId}
         messages={currentMessages}
         selectedPapers={selectedPapers}
         isSending={isSending}
         isLoadingSession={isSessionLoading}
         filters={filters}
-        searchMode={searchMode}
-        embeddingModel={embeddingModel}
-        onSearchModeChange={setSearchMode}
-        onEmbeddingModelChange={setEmbeddingModel}
         isSidebarOpen={isSidebarOpen}
         onTogglePaper={handleTogglePaper}
         onSendMessage={handleSendMessage}
         onRemovePaper={handleRemovePaper}
         onFiltersChange={setFilters}
-        onToggleSidebar={handleToggleSidebar}
+        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
       />
       <Toaster position="top-right" richColors />
     </div>
   );
 }
-

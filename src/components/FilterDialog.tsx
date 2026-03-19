@@ -23,7 +23,6 @@ import { getFaculties, getDepartments } from "@/lib/api";
 import type { ActiveFilters } from "@/lib/types";
 
 type FilterDialogProps = {
-  userId: string;
   filters: ActiveFilters;
   onFiltersChange: (filters: ActiveFilters) => void;
 };
@@ -34,7 +33,6 @@ const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 30 }, (_, i) => currentYear - i);
 
 export default function FilterDialog({
-  userId,
   filters,
   onFiltersChange,
 }: FilterDialogProps) {
@@ -63,7 +61,7 @@ export default function FilterDialog({
   const loadFaculties = async () => {
     setLoadingFaculties(true);
     try {
-      const data = await getFaculties(userId);
+      const data = await getFaculties();
       setFaculties(data);
     } catch (error) {
       console.error("Failed to load faculties:", error);
@@ -75,7 +73,7 @@ export default function FilterDialog({
   const loadDepartments = async () => {
     setLoadingDepartments(true);
     try {
-      const data = await getDepartments(userId);
+      const data = await getDepartments();
       setDepartments(data);
     } catch (error) {
       console.error("Failed to load departments:", error);

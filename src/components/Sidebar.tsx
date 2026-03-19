@@ -1,38 +1,33 @@
-import { useEffect } from "react";
-import { Plus, PanelLeft } from "lucide-react";
-import type { Session } from "@/lib/types";
+import { Plus, PanelLeft, LogOut, UserCircle } from "lucide-react";
+import type { Session, User } from "@/lib/types";
 import { formatTimestamp } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type SidebarProps = {
+  user: User;
   sessions: Session[];
   currentSessionId: number | null;
   isLoading: boolean;
   onNewChat: () => void;
   onSelectSession: (sessionId: number) => void;
   onToggleSidebar: () => void;
+  onLogout: () => void;
 };
 
 export default function Sidebar({
+  user,
   sessions,
   currentSessionId,
   isLoading,
   onNewChat,
   onSelectSession,
   onToggleSidebar,
+  onLogout,
 }: SidebarProps) {
-  // Debug: Log sessions state changes
-  useEffect(() => {
-    console.log("[Sidebar] State updated:", {
-      isLoading,
-      sessionsCount: sessions.length,
-      sessions: sessions.slice(0, 3), // Log first 3 sessions
-    });
-  }, [sessions, isLoading]);
   return (
     <aside className="flex h-screen w-72 shrink-0 flex-col border-r border-slate-200 bg-white transition-all duration-300">
-      {/* Header - fixed */}
+      {/* Header */}
       <div className="shrink-0 border-b border-slate-200">
         <div className="flex items-center justify-between px-4 py-4">
           <h1 className="text-lg font-semibold text-slate-900">AI Repository IPB</h1>
@@ -41,7 +36,7 @@ export default function Sidebar({
             size="icon"
             onClick={onToggleSidebar}
             className="h-8 w-8 text-slate-500 hover:text-slate-900"
-            title="Close sidebar"
+            title="Tutup sidebar"
           >
             <PanelLeft className="h-5 w-5" />
           </Button>
@@ -55,7 +50,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Sessions list - scrollable */}
+      {/* Sessions list — scrollable */}
       <div className="flex-1 overflow-y-auto px-2 py-4">
         {isLoading ? (
           <div className="space-y-3 px-2">
@@ -78,17 +73,19 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => onSelectSession(session.id)}
-                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${isActive
+                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${
+                      isActive
                         ? "border-slate-900 bg-slate-900 text-white shadow-soft"
                         : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                      }`}
+                    }`}
                   >
                     <div className="truncate font-medium">
                       {session.title || "Untitled chat"}
                     </div>
                     <div
-                      className={`mt-1 text-xs ${isActive ? "text-slate-200" : "text-slate-500"
-                        }`}
+                      className={`mt-1 text-xs ${
+                        isActive ? "text-slate-200" : "text-slate-500"
+                      }`}
                     >
                       {formatTimestamp(session.updated_at)}
                     </div>
@@ -99,7 +96,33 @@ export default function Sidebar({
           </ul>
         )}
       </div>
+
+      {/* User profile + logout — fixed at bottom */}
+      <div className="shrink-0 border-t border-slate-200 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+            <UserCircle className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-slate-900">
+              {user.nama ?? user.username}
+            </p>
+            <p className="truncate text-xs text-slate-500">
+              {user.nim ? `${user.nim}` : user.username}
+              {user.jenjang ? ` · ${user.jenjang}` : ""}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onLogout}
+            className="h-8 w-8 shrink-0 text-slate-400 hover:text-red-600"
+            title="Keluar"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </aside>
   );
 }
-

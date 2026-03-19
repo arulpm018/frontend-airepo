@@ -7,40 +7,30 @@ import { Search, Wifi, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ChatAreaProps = {
-  userId: string;
   messages: MessageType[];
   selectedPapers: SelectedPaper[];
   isSending: boolean;
   isLoadingSession: boolean;
   filters: ActiveFilters;
-  searchMode: "fast" | "accurate";
-  embeddingModel: "openai" | "selfhosted";
   isSidebarOpen: boolean;
   onTogglePaper: (paperId: string, title: string) => void;
   onSendMessage: (message: string) => void;
   onRemovePaper: (paperId: string) => void;
   onFiltersChange: (filters: ActiveFilters) => void;
-  onSearchModeChange: (mode: "fast" | "accurate") => void;
-  onEmbeddingModelChange: (model: "openai" | "selfhosted") => void;
   onToggleSidebar: () => void;
 };
 
 export default function ChatArea({
-  userId,
   messages,
   selectedPapers,
   isSending,
   isLoadingSession,
   filters,
-  searchMode,
-  embeddingModel,
   isSidebarOpen,
   onTogglePaper,
   onSendMessage,
   onRemovePaper,
   onFiltersChange,
-  onSearchModeChange,
-  onEmbeddingModelChange,
   onToggleSidebar,
 }: ChatAreaProps) {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -48,32 +38,25 @@ export default function ChatArea({
   const lastAssistantMessageRef = useRef<HTMLDivElement | null>(null);
   const [prevMessagesCount, setPrevMessagesCount] = useState(0);
 
-  // Scroll behavior: 
-  // - When loading session (many messages added) → scroll to last user message
-  // - When sending new message → scroll to last assistant message (top of AI response)
   useEffect(() => {
-    if (isLoadingSession) return; // Don't scroll while loading
+    if (isLoadingSession) return;
 
     const messageCountDiff = messages.length - prevMessagesCount;
 
-    // If messages increased by more than 2, it's a session load
-    // Scroll to last user message so user sees their question + AI response
     if (messageCountDiff > 2 && lastUserMessageRef.current) {
       setTimeout(() => {
         lastUserMessageRef.current?.scrollIntoView({
           behavior: "smooth",
-          block: "start" // Align to top of viewport
+          block: "start",
         });
       }, 100);
     } else if (messages.length > prevMessagesCount) {
-      // New message(s) added - check if last message is from assistant
       const lastMessage = messages[messages.length - 1];
       if (lastMessage?.role === "assistant" && lastAssistantMessageRef.current) {
-        // Scroll to top of assistant message, not bottom
         setTimeout(() => {
           lastAssistantMessageRef.current?.scrollIntoView({
             behavior: "smooth",
-            block: "start" // Align to top of viewport
+            block: "start",
           });
         }, 100);
       }
@@ -84,7 +67,7 @@ export default function ChatArea({
 
   return (
     <section className="flex flex-1 flex-col relative h-screen transition-all duration-300">
-      {/* Header / Toggle Button */}
+      {/* Toggle sidebar button (when sidebar is closed) */}
       {!isSidebarOpen && (
         <div className="absolute top-4 left-4 z-20">
           <Button
@@ -133,7 +116,9 @@ export default function ChatArea({
                   <div className="space-y-1 text-left">
                     <p className="font-medium text-blue-700">Koneksi Diperlukan</p>
                     <p className="text-blue-600/90 leading-relaxed">
-                      Untuk dapat menggunakan fitur chat, pastikan perangkat kamu terkoneksi dengan wifi kampus <span className="font-semibold">ipb-access</span> atau menggunakan <span className="font-semibold">OpenVPN IPB</span>.
+                      Untuk dapat menggunakan fitur chat, pastikan perangkat kamu terkoneksi dengan wifi kampus{" "}
+                      <span className="font-semibold">ipb-access</span> atau menggunakan{" "}
+                      <span className="font-semibold">OpenVPN IPB</span>.
                     </p>
                   </div>
                 </div>
@@ -143,22 +128,26 @@ export default function ChatArea({
         ) : (
           <div className="space-y-6">
             {messages.map((message, index) => {
-              // Find last user message for scroll target
-              const lastUserMessageIndex = messages.map(m => m.role).lastIndexOf("user");
+              const lastUserMessageIndex = messages.map((m) => m.role).lastIndexOf("user");
               const isLastUserMessage =
-                message.role === "user" &&
-                index === lastUserMessageIndex;
+                message.role === "user" && index === lastUserMessageIndex;
 
-              // Find last assistant message for scroll target
-              const lastAssistantMessageIndex = messages.map(m => m.role).lastIndexOf("assistant");
+              const lastAssistantMessageIndex = messages
+                .map((m) => m.role)
+                .lastIndexOf("assistant");
               const isLastAssistantMessage =
-                message.role === "assistant" &&
-                index === lastAssistantMessageIndex;
+                message.role === "assistant" && index === lastAssistantMessageIndex;
 
               return (
                 <div
                   key={message.id}
-                  ref={isLastUserMessage ? lastUserMessageRef : (isLastAssistantMessage ? lastAssistantMessageRef : null)}
+                  ref={
+                    isLastUserMessage
+                      ? lastUserMessageRef
+                      : isLastAssistantMessage
+                      ? lastAssistantMessageRef
+                      : null
+                  }
                 >
                   <Message
                     message={message}
@@ -185,20 +174,14 @@ export default function ChatArea({
       {/* Fixed input box at bottom */}
       <div className="shrink-0">
         <InputBox
-          userId={userId}
           selectedPapers={selectedPapers}
           isSending={isSending}
           filters={filters}
           onSendMessage={onSendMessage}
           onRemovePaper={onRemovePaper}
           onFiltersChange={onFiltersChange}
-          searchMode={searchMode}
-          embeddingModel={embeddingModel}
-          onSearchModeChange={onSearchModeChange}
-          onEmbeddingModelChange={onEmbeddingModelChange}
         />
       </div>
     </section>
   );
 }
-
