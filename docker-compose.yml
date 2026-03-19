@@ -1,14 +1,9 @@
-version: '2.2'
+version: '3.8'
 services:
-  web_#{REPOSITORYNAME}#:
-    image: #{IMAGETAG}#
+  web_frontend_airepo:
+    build: .
     ports:
-      - #{PORTS}#
+      - "3000:80"
     restart: always
-networks:
-  default:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-      - subnet: #{SUBNET}#
+    env_file:
+      - .env

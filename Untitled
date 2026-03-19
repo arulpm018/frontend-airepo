@@ -1,0 +1,2 @@
+kiko@dbai:~/ai_repo-FE$ docker compose up -d --build
+validating /home/kiko/ai_repo-FE/docker-compose.yml: networks.default.ipam.config.0.subnet must be a string
