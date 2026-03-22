@@ -275,39 +275,25 @@ export default function App() {
             } else if (event.type === 'error') {
               // Backend sent an explicit error mid-stream
               throw new Error(event.message);
+              
+            } else if (event.type === 'done') {
+              if (event.session_id) {
+                setCurrentSessionId(event.session_id);
+                await loadSessions();
+              }
+              
+              setSelectedPapers([]);
             }
-            
-            // todo: process "done" event, set current session id, set selected papers
           }
         }
       }
-      
-      // const response = await sendMessage(payload);
-      //
-      // if (currentSessionId === null) {
-      //   setCurrentSessionId(response.session_id);
-      //   await loadSessions();
-      // }
-      //
-      // const assistantMessage: Message = {
-      //   id: `assistant-${response.message_id}`,
-      //   role: "assistant",
-      //   content: response.ai_response,
-      //   created_at: new Date().toISOString(),
-      //   references: response.references ?? [],
-      // };
-      //
-      // setCurrentMessages((prev) => [...prev, assistantMessage]);
-      // setSelectedPapers([]);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Gagal mengirim pesan.";
       if (message.includes("401") || message.includes("403")) {
         handleLogout();
         return;
       }
-      toast.error(message);
-      // Remove the optimistic user message on error
-      setCurrentMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
+      toast.error(message, { duration: 60000 });
     } finally {
       setIsSending(false);
     }
