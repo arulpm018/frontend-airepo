@@ -157,16 +157,6 @@ export default function ChatArea({
                 </div>
               );
             })}
-            {isSending && (
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-semibold">
-                  AI
-                </div>
-                <div className="max-w-xl rounded-2xl bg-white p-4 text-sm text-slate-600 shadow-soft">
-                  Mengetik jawaban...
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>

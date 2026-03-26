@@ -1,6 +1,6 @@
 import type { ApiMessage, Reference, Session, User } from "./types";
 
-const BASE_URL =
+export const BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, "") ??
   "http://localhost:8001/api/v1";
 
