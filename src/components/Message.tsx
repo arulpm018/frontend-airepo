@@ -86,6 +86,9 @@ export default function Message({
               : "bg-white text-slate-800"
               }`}
           >
+            <div>
+              <small className={`animate-pulse text-gray-500`}>{ message.progress_text }</small>
+            </div>
             {isUser ? (
               message.content
             ) : (

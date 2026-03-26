@@ -29,6 +29,7 @@ export type Reference = {
 export type Message = {
   id: string;
   role: "user" | "assistant";
+  progress_text?: string | null;
   content: string;
   created_at?: string;
   references?: Reference[];
