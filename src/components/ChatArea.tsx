@@ -3,7 +3,7 @@ import type { Message as MessageType, SelectedPaper, ActiveFilters, ChatLimit } 
 import Message from "@/components/Message";
 import InputBox from "@/components/InputBox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Wifi, PanelLeft } from "lucide-react";
+import { Search, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ChatAreaProps = {
@@ -109,22 +109,7 @@ export default function ChatArea({
                   Mulai percakapan dengan menanyakan topik penelitian yang kamu butuhkan.
                 </p>
               </div>
-
-              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-sm text-blue-900">
-                <div className="flex gap-3">
-                  <div className="shrink-0">
-                    <Wifi className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="space-y-1 text-left">
-                    <p className="font-medium text-blue-700">Koneksi Diperlukan</p>
-                    <p className="text-blue-600/90 leading-relaxed">
-                      Untuk dapat menggunakan fitur chat, pastikan perangkat kamu terkoneksi dengan wifi kampus{" "}
-                      <span className="font-semibold">ipb-access</span> atau menggunakan{" "}
-                      <span className="font-semibold">OpenVPN IPB</span>.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </div>
         ) : (
