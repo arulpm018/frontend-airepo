@@ -33,6 +33,7 @@ export type Message = {
   content: string;
   created_at?: string;
   references?: Reference[];
+  isError?: boolean;
 };
 
 export type ApiMessage = {
@@ -76,5 +77,12 @@ export type ActiveFilters = {
     start: number | null;
     end: number | null;
   };
+};
+
+export type ChatLimit = {
+  username: string;
+  remaining_chats: number;
+  daily_limit: number;
+  chats_used: number;
 };
 

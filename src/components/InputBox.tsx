@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SendHorizonal } from "lucide-react";
-import type { SelectedPaper, ActiveFilters } from "@/lib/types";
+import type { SelectedPaper, ActiveFilters, ChatLimit } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import SelectedPaperChip from "@/components/SelectedPaperChip";
@@ -10,6 +10,7 @@ type InputBoxProps = {
   selectedPapers: SelectedPaper[];
   isSending: boolean;
   filters: ActiveFilters;
+  chatLimit: ChatLimit | null;
   onSendMessage: (message: string) => void;
   onRemovePaper: (paperId: string) => void;
   onFiltersChange: (filters: ActiveFilters) => void;
@@ -19,11 +20,14 @@ export default function InputBox({
   selectedPapers,
   isSending,
   filters,
+  chatLimit,
   onSendMessage,
   onRemovePaper,
   onFiltersChange,
 }: InputBoxProps) {
   const [message, setMessage] = useState("");
+
+  const isLimitExceeded = chatLimit !== null && chatLimit.remaining_chats === 0;
 
   const handleSubmit = () => {
     const trimmed = message.trim();
@@ -45,6 +49,13 @@ export default function InputBox({
           ))}
         </div>
       )}
+
+      {isLimitExceeded && (
+        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+          Kuota chat harian ({chatLimit.daily_limit} chat/hari) sudah habis.
+        </div>
+      )}
+
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <Textarea
@@ -78,8 +89,24 @@ export default function InputBox({
           </Button>
         </div>
       </div>
-      <div className="mt-2 text-xs text-slate-500">
-        Enter untuk kirim, Shift + Enter untuk baris baru.
+
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-xs text-slate-500">
+          Enter untuk kirim, Shift + Enter untuk baris baru.
+        </span>
+        {chatLimit !== null && (
+          <span
+            className={`text-xs font-medium ${
+              chatLimit.remaining_chats === 0
+                ? "text-red-600"
+                : chatLimit.remaining_chats <= 3
+                ? "text-amber-600"
+                : "text-slate-500"
+            }`}
+          >
+            {chatLimit.remaining_chats} / {chatLimit.daily_limit} chat tersisa hari ini
+          </span>
+        )}
       </div>
     </div>
   );

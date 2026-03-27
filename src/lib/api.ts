@@ -1,4 +1,4 @@
-import type { ApiMessage, Reference, Session, User } from "./types";
+import type { ApiMessage, ChatLimit, Reference, Session, User } from "./types";
 
 export const BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, "") ??
@@ -154,6 +154,10 @@ export async function sendMessage(payload: SendMessagePayload): Promise<SendMess
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function getChatLimit(): Promise<ChatLimit> {
+  return apiFetch<ChatLimit>("/chat/limit");
 }
 
 // ─── Master data ───────────────────────────────────────────────────────────

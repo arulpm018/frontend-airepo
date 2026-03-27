@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import { AlertCircle } from "lucide-react";
 import type { Message as MessageType } from "@/lib/types";
 import ReferenceCard from "@/components/ReferenceCard";
 
@@ -75,55 +76,67 @@ export default function Message({
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div className="flex max-w-3xl gap-3">
         {!isUser && (
-          <div className="h-8 w-8 shrink-0 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-semibold">
+          <div className={`h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold ${message.isError ? "bg-amber-100 text-amber-700" : "bg-slate-900 text-white"}`}>
             AI
           </div>
         )}
         <div className="space-y-3">
           <div
-            className={`rounded-2xl px-4 py-3 text-sm shadow-soft ${isUser
-              ? "bg-slate-900 text-white"
-              : "bg-white text-slate-800"
-              }`}
+            className={`rounded-2xl px-4 py-3 text-sm shadow-soft ${
+              isUser
+                ? "bg-slate-900 text-white"
+                : message.isError
+                ? "border border-amber-200 bg-amber-50 text-amber-900"
+                : "bg-white text-slate-800"
+            }`}
           >
-            <div>
-              <small className={`animate-pulse text-gray-500`}>{ message.progress_text }</small>
-            </div>
-            {isUser ? (
-              message.content
+            {message.isError ? (
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <span>{message.content}</span>
+              </div>
             ) : (
-              <ReactMarkdown
-                className="prose prose-sm prose-slate max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:font-semibold prose-ol:list-decimal prose-ul:list-disc prose-li:my-1"
-                components={{
-                  p: ({ children }) => (
-                    <p className="mb-3 last:mb-0">
-                      {processChildren(children, message.id)}
-                    </p>
-                  ),
-                  ul: ({ children }) => <ul className="mb-3 ml-4 space-y-1">{children}</ul>,
-                  ol: ({ children }) => <ol className="mb-3 ml-4 space-y-1">{children}</ol>,
-                  li: ({ children }) => (
-                    <li className="leading-relaxed">
-                      {processChildren(children, message.id)}
-                    </li>
-                  ),
-                  strong: ({ children }) => (
-                    <strong className="font-semibold">
-                      {processChildren(children, message.id)}
-                    </strong>
-                  ),
-                  h1: ({ children }) => <h1 className="mb-2 text-lg font-semibold">{children}</h1>,
-                  h2: ({ children }) => <h2 className="mb-2 text-base font-semibold">{children}</h2>,
-                  h3: ({ children }) => <h3 className="mb-2 text-sm font-semibold">{children}</h3>,
-                  a: ({ href, children }) => (
-                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      {children}
-                    </a>
-                  ),
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
+              <>
+                <div>
+                  <small className="animate-pulse text-gray-500">{message.progress_text}</small>
+                </div>
+                {isUser ? (
+                  message.content
+                ) : (
+                  <ReactMarkdown
+                    className="prose prose-sm prose-slate max-w-none prose-headings:font-semibold prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:font-semibold prose-ol:list-decimal prose-ul:list-disc prose-li:my-1"
+                    components={{
+                      p: ({ children }) => (
+                        <p className="mb-3 last:mb-0">
+                          {processChildren(children, message.id)}
+                        </p>
+                      ),
+                      ul: ({ children }) => <ul className="mb-3 ml-4 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="mb-3 ml-4 space-y-1">{children}</ol>,
+                      li: ({ children }) => (
+                        <li className="leading-relaxed">
+                          {processChildren(children, message.id)}
+                        </li>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-semibold">
+                          {processChildren(children, message.id)}
+                        </strong>
+                      ),
+                      h1: ({ children }) => <h1 className="mb-2 text-lg font-semibold">{children}</h1>,
+                      h2: ({ children }) => <h2 className="mb-2 text-base font-semibold">{children}</h2>,
+                      h3: ({ children }) => <h3 className="mb-2 text-sm font-semibold">{children}</h3>,
+                      a: ({ href, children }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                )}
+              </>
             )}
           </div>
 
