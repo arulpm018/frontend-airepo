@@ -33,7 +33,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
             AI Repository IPB
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Masuk menggunakan akun SSO IPB
+            Masuk menggunakan ID IPB
           </p>
         </div>
 
@@ -41,7 +41,7 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
         <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="username">Username SSO IPB</Label>
+              <Label htmlFor="username">Username IPB</Label>
               <Input
                 id="username"
                 type="text"
@@ -127,10 +127,6 @@ export default function LoginPage({ onLogin, isLoading, error }: LoginPageProps)
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-400">
-          Gunakan username dan password SSO yang sama seperti di{" "}
-          <span className="font-medium text-slate-500">sso.ipb.ac.id</span>
-        </p>
       </div>
     </div>
   );
