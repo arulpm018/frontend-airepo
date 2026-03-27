@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Message as MessageType, SelectedPaper, ActiveFilters } from "@/lib/types";
+import type { Message as MessageType, SelectedPaper, ActiveFilters, ChatLimit } from "@/lib/types";
 import Message from "@/components/Message";
 import InputBox from "@/components/InputBox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,7 @@ type ChatAreaProps = {
   isLoadingSession: boolean;
   filters: ActiveFilters;
   isSidebarOpen: boolean;
+  chatLimit: ChatLimit | null;
   onTogglePaper: (paperId: string, title: string) => void;
   onSendMessage: (message: string) => void;
   onRemovePaper: (paperId: string) => void;
@@ -27,6 +28,7 @@ export default function ChatArea({
   isLoadingSession,
   filters,
   isSidebarOpen,
+  chatLimit,
   onTogglePaper,
   onSendMessage,
   onRemovePaper,
@@ -167,6 +169,7 @@ export default function ChatArea({
           selectedPapers={selectedPapers}
           isSending={isSending}
           filters={filters}
+          chatLimit={chatLimit}
           onSendMessage={onSendMessage}
           onRemovePaper={onRemovePaper}
           onFiltersChange={onFiltersChange}

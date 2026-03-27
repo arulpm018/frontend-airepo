@@ -3,12 +3,13 @@ import { Toaster, toast } from "sonner";
 import Sidebar from "@/components/Sidebar";
 import ChatArea from "@/components/ChatArea";
 import LoginPage from "@/components/LoginPage";
-import type { Message, SelectedPaper, Session, ActiveFilters, User } from "@/lib/types";
+import type { Message, SelectedPaper, Session, ActiveFilters, User, ChatLimit } from "@/lib/types";
 import {
   BASE_URL,
   getToken,  
   getSessionDetail,
   getSessions,
+  getChatLimit,
   login as apiLogin,
   clearAuth,
   saveAuth,
@@ -48,6 +49,7 @@ export default function App() {
   const [isSessionLoading, setIsSessionLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [chatLimit, setChatLimit] = useState<ChatLimit | null>(null);
 
   // ─── Auth handlers ────────────────────────────────────────────────────────
 
@@ -80,12 +82,13 @@ export default function App() {
     setCurrentMessages([]);
     setSelectedPapers([]);
     setFilters(EMPTY_FILTERS);
+    setChatLimit(null);
   };
 
   // ─── Session helpers ──────────────────────────────────────────────────────
 
-  const loadSessions = useCallback(async () => {
-    setIsSessionsLoading(true);
+  const loadSessions = useCallback(async (silent = false) => {
+    if (!silent) setIsSessionsLoading(true);
     try {
       const data = await getSessions();
       setSessions(data);
@@ -96,15 +99,22 @@ export default function App() {
         handleLogout();
         return;
       }
-      setSessions([]);
+      if (!silent) setSessions([]);
     } finally {
-      setIsSessionsLoading(false);
+      if (!silent) setIsSessionsLoading(false);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (user) loadSessions();
   }, [user, loadSessions]);
+
+  useEffect(() => {
+    if (!user) return;
+    getChatLimit()
+      .then(setChatLimit)
+      .catch(() => {/* non-critical, ignore */});
+  }, [user]);
 
   // ─── Chat handlers ────────────────────────────────────────────────────────
 
@@ -164,6 +174,9 @@ export default function App() {
     setCurrentMessages((prev) => [...prev, userMessage]);
     setIsSending(true);
 
+    // Hoisted so the catch block can remove the placeholder on error
+    const tempAssistantId = `assistant-temp-${Date.now()}`;
+
     try {
       const payload: {
         query: string;
@@ -194,12 +207,10 @@ export default function App() {
         };
       }
 
-      // Add a streaming placeholder message immediately
-      const tempAssistantId = `assistant-temp-${Date.now()}`;
       const initialAssistantMessage: Message = {
         id: tempAssistantId,
         role: "assistant",
-        progress_text: "Memproses...", 
+        progress_text: "Memproses...",
         content: "",
         created_at: new Date().toISOString(),
         references: [],
@@ -207,15 +218,14 @@ export default function App() {
 
       setCurrentMessages((prev) => [...prev, initialAssistantMessage]);
 
-      // 2. Use fetch directly to access the stream
       const token = getToken();
       const response = await fetch(`${BASE_URL}/chat/send`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -225,70 +235,108 @@ export default function App() {
         throw new Error("No readable stream available.");
       }
 
-      // 3. Setup the stream reader
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
       let accumulatedContent = "";
 
-      // 4. Read the stream continuously
-      while (true) {
+      streamLoop: while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        // Decode the bytes into text and add to our buffer
         buffer += decoder.decode(value, { stream: true });
 
-        // Split by newlines. The last element might be an incomplete line, so we keep it in the buffer.
-        const lines = buffer.split('\n');
+        const lines = buffer.split("\n");
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          console.log(`Processing line: ${line}`);
+          if (!line.startsWith("data: ")) continue;
+          const dataStr = line.slice(6).trim();
+          if (!dataStr) continue;
 
-          // SSE data lines start with "data: "
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6).trim();
-            if (!dataStr) continue;
+          const event = JSON.parse(dataStr);
 
-            const event = JSON.parse(dataStr);
-            console.log(`Received event: ${event.type}`, event);
-
-            if (event.type === 'progress') {
-              // Update your progress state
-              setCurrentMessages(prev => prev.map(msg =>
-                  msg.id === tempAssistantId ? {...msg, progress_text: event.message} : msg
-              ));
-              
-            } else if (event.type === 'token') {
-              // Append the new token and update the specific message in state
-              accumulatedContent += event.content;
-              setCurrentMessages(prev => prev.map(msg =>
-                  msg.id === tempAssistantId ? {...msg, content: accumulatedContent, progress_text: null} : msg
-              ));
-
-            } else if (event.type === 'references') {
-
-              setCurrentMessages(prev => prev.map(msg =>
-                  msg.id === tempAssistantId ? {...msg, references: event.references} : msg
-              ));
-            } else if (event.type === 'error') {
-              // Backend sent an explicit error mid-stream
-              throw new Error(event.message);
-              
-            } else if (event.type === 'done') {
-              if (event.session_id) {
-                setCurrentSessionId(event.session_id);
-                await loadSessions();
-              }
-              
-              setSelectedPapers([]);
+          if (event.type === "progress") {
+            setCurrentMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === tempAssistantId
+                  ? { ...msg, progress_text: event.message }
+                  : msg
+              )
+            );
+          } else if (event.type === "token") {
+            accumulatedContent += event.content;
+            setCurrentMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === tempAssistantId
+                  ? { ...msg, content: accumulatedContent, progress_text: null }
+                  : msg
+              )
+            );
+          } else if (event.type === "references") {
+            setCurrentMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === tempAssistantId
+                  ? { ...msg, references: event.references }
+                  : msg
+              )
+            );
+          } else if (event.type === "error") {
+            if (event.code === "DAILY_LIMIT_EXCEEDED") {
+              // Show as an error bubble inside the chat — input stays enabled
+              setChatLimit((prev) =>
+                prev ? { ...prev, remaining_chats: 0 } : null
+              );
+              setCurrentMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === tempAssistantId
+                    ? {
+                        ...msg,
+                        content:
+                          event.message ||
+                          "Kuota chat harian kamu sudah habis. Coba kirim pesan lagi besok ya.",
+                        isError: true,
+                        progress_text: null,
+                      }
+                    : msg
+                )
+              );
+              break streamLoop;
             }
+            throw new Error(event.message);
+          } else if (event.type === "done") {
+            if (event.session_id) {
+              setCurrentSessionId(event.session_id);
+              await loadSessions(true);
+            }
+
+            if (
+              typeof event.remaining_chats === "number" &&
+              typeof event.daily_limit === "number"
+            ) {
+              setChatLimit((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      remaining_chats: event.remaining_chats,
+                      daily_limit: event.daily_limit,
+                      chats_used: event.chats_used ?? prev.chats_used,
+                    }
+                  : null
+              );
+            }
+
+            setSelectedPapers([]);
           }
         }
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Gagal mengirim pesan.";
+      const message =
+        error instanceof Error ? error.message : "Gagal mengirim pesan.";
+      // Remove the empty placeholder so the UI stays clean
+      setCurrentMessages((prev) =>
+        prev.filter((msg) => msg.id !== tempAssistantId)
+      );
       if (message.includes("401") || message.includes("403")) {
         handleLogout();
         return;
@@ -335,6 +383,7 @@ export default function App() {
         isLoadingSession={isSessionLoading}
         filters={filters}
         isSidebarOpen={isSidebarOpen}
+        chatLimit={chatLimit}
         onTogglePaper={handleTogglePaper}
         onSendMessage={handleSendMessage}
         onRemovePaper={handleRemovePaper}
