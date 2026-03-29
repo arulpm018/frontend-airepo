@@ -86,3 +86,9 @@ export type ChatLimit = {
   chats_used: number;
 };
 
+export type FeedbackPayload = {
+  message_id: number;
+  is_liked: boolean;
+  feedback_text?: string;
+};
+

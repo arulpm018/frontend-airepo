@@ -310,6 +310,14 @@ export default function App() {
               await loadSessions(true);
             }
 
+            if (event.message_id) {
+               setCurrentMessages((prev) =>
+                 prev.map((msg) =>
+                   msg.id === tempAssistantId ? { ...msg, id: String(event.message_id) } : msg
+                 )
+               );
+            }
+
             if (
               typeof event.remaining_chats === "number" &&
               typeof event.daily_limit === "number"

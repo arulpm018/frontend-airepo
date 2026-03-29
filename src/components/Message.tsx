@@ -1,6 +1,9 @@
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ThumbsUp, ThumbsDown, Send, ChevronDown, ChevronRight } from "lucide-react";
 import type { Message as MessageType } from "@/lib/types";
+import { submitFeedback } from "@/lib/api";
+import { toast } from "sonner";
 import ReferenceCard from "@/components/ReferenceCard";
 
 
@@ -71,6 +74,54 @@ export default function Message({
   onTogglePaper,
 }: MessageProps) {
   const isUser = message.role === "user";
+  
+  const [feedbackStatus, setFeedbackStatus] = useState<"up" | "down" | null>(null);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReferencesOpen, setIsReferencesOpen] = useState(false);
+
+  const messageIdInt = parseInt(message.id, 10);
+  const isCompleteAiMessage = !isUser && !isNaN(messageIdInt) && !message.progress_text;
+
+  const handleFeedback = async (type: "up" | "down") => {
+    if (!isCompleteAiMessage) return;
+    
+    // Toggle logic: if clicking the same one, maybe we shouldn't untoggle since the DB is an upsert,
+    // but we can just update status and show UI. The specification doesn't mention untoggling.
+    if (type === "up") {
+      setFeedbackStatus("up");
+      setShowFeedbackForm(false);
+      await sendFeedbackToApi(true, "");
+    } else {
+      setFeedbackStatus("down");
+      setShowFeedbackForm(true);
+      // Wait for user to type feedback_text and submit
+    }
+  };
+
+  const handleFeedbackSubmit = async () => {
+    if (feedbackStatus !== "down") return;
+    setIsSubmitting(true);
+    await sendFeedbackToApi(false, feedbackText);
+    setIsSubmitting(false);
+    setShowFeedbackForm(false);
+  };
+
+  const sendFeedbackToApi = async (isLiked: boolean, text: string) => {
+    try {
+      await submitFeedback({
+        message_id: messageIdInt,
+        is_liked: isLiked,
+        feedback_text: text || undefined,
+      });
+      toast.success("Feedback berhasil dikirim");
+    } catch (error) {
+      toast.error("Gagal mengirim feedback");
+      console.error(error);
+    }
+  };
+
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -140,24 +191,96 @@ export default function Message({
             )}
           </div>
 
-          {!isUser && message.references && message.references.length > 0 && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                References
+          {isCompleteAiMessage && !message.isError && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 px-2">
+                <button
+                  onClick={() => handleFeedback("up")}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                    feedbackStatus === "up"
+                      ? "bg-blue-100 text-blue-600"
+                      : "bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+                  }`}
+                  title="Jawaban Akurat"
+                >
+                  <ThumbsUp className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleFeedback("down")}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                    feedbackStatus === "down"
+                      ? "bg-red-100 text-red-600"
+                      : "bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+                  }`}
+                  title="Jawaban Tidak Akurat"
+                >
+                  <ThumbsDown className="h-4 w-4" />
+                </button>
               </div>
-              <div className="mt-3 space-y-3">
-                {message.references.map((reference, index) => (
-                  <ReferenceCard
-                    key={`${reference.paper_id}-${index}`}
-                    reference={reference}
-                    referenceNumber={index + 1}
-                    isSelected={selectedPaperIds.includes(reference.paper_id)}
-                    onToggle={onTogglePaper}
-                    showDivider={index !== message.references!.length - 1}
-                    messageId={message.id}
+
+              {showFeedbackForm && feedbackStatus === "down" && (
+                <div className="mt-2 text-sm max-w-sm rounded-xl border border-slate-200 bg-white p-3 shadow-soft space-y-2">
+                  <p className="font-medium text-slate-700">Kenapa jawaban ini kurang tepat?</p>
+                  <textarea
+                    className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 p-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    rows={2}
+                    placeholder="Masukkan alasan (opsional)..."
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    disabled={isSubmitting}
                   />
-                ))}
-              </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleFeedbackSubmit}
+                      disabled={isSubmitting}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        "Mengirim..."
+                      ) : (
+                        <>
+                          Kirim <Send className="h-3 w-3" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isUser && message.references && message.references.length > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-soft overflow-hidden">
+              <button
+                onClick={() => setIsReferencesOpen(!isReferencesOpen)}
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors"
+                aria-expanded={isReferencesOpen}
+              >
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  References ({message.references.length})
+                </div>
+                {isReferencesOpen ? (
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                )}
+              </button>
+              
+              {isReferencesOpen && (
+                <div className="px-4 pb-4 pt-1 space-y-3 border-t border-slate-100">
+                  {message.references.map((reference, index) => (
+                    <ReferenceCard
+                      key={`${reference.paper_id}-${index}`}
+                      reference={reference}
+                      referenceNumber={index + 1}
+                      isSelected={selectedPaperIds.includes(reference.paper_id)}
+                      onToggle={onTogglePaper}
+                      showDivider={index !== message.references!.length - 1}
+                      messageId={message.id}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
