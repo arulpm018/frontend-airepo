@@ -131,7 +131,7 @@ export default function Message({
             AI
           </div>
         )}
-        <div className="space-y-2 md:space-y-3 max-w-[85%] md:max-w-none">
+        <div className="w-full max-w-[85%] md:max-w-none min-w-0 space-y-2 md:space-y-3">
           <div
             className={`rounded-2xl px-3 py-2 md:px-4 md:py-3 text-[13.5px] md:text-sm shadow-soft ${
               isUser
@@ -250,7 +250,7 @@ export default function Message({
           )}
 
           {!isUser && message.references && message.references.length > 0 && (
-            <div className="rounded-2xl border border-slate-200 bg-white shadow-soft overflow-hidden mt-1 md:mt-0">
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-soft overflow-hidden mt-1 md:mt-0 w-full min-w-0">
               <button
                 onClick={() => setIsReferencesOpen(!isReferencesOpen)}
                 className="w-full flex items-center justify-between p-3 md:p-4 text-left hover:bg-slate-50 transition-colors"
@@ -267,7 +267,7 @@ export default function Message({
               </button>
               
               {isReferencesOpen && (
-                <div className="px-4 pb-4 pt-1 space-y-3 border-t border-slate-100">
+                <div className="px-3 md:px-4 pb-4 pt-1 space-y-3 border-t border-slate-100 min-w-0 overflow-hidden">
                   {message.references.map((reference, index) => (
                     <ReferenceCard
                       key={`${reference.paper_id}-${index}`}

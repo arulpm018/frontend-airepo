@@ -68,7 +68,7 @@ export default function ChatArea({
   }, [messages, isLoadingSession, prevMessagesCount]);
 
   return (
-    <section className="flex flex-1 flex-col relative h-screen transition-all duration-300">
+    <section className="flex flex-1 flex-col relative h-screen transition-all duration-300 overflow-x-hidden min-w-0">
       {/* Toggle sidebar button (when sidebar is closed) */}
       {!isSidebarOpen && (
         <div className="absolute top-4 left-4 z-20">
@@ -87,7 +87,7 @@ export default function ChatArea({
       {/* Scrollable messages area */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-4 pb-6 pt-14 md:pt-6 md:px-8"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6 pt-14 md:pt-6 md:px-8"
       >
         {isLoadingSession ? (
           <div className="space-y-4">
@@ -113,7 +113,7 @@ export default function ChatArea({
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 w-full min-w-0">
             {messages.map((message, index) => {
               const lastUserMessageIndex = messages.map((m) => m.role).lastIndexOf("user");
               const isLastUserMessage =

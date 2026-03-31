@@ -375,7 +375,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-slate-50 max-w-full">
       {isSidebarOpen && (
         <Sidebar
           user={user}
