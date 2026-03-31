@@ -317,7 +317,6 @@ export default function App() {
                  )
                );
             }
-
             if (
               typeof event.remaining_chats === "number" &&
               typeof event.daily_limit === "number"

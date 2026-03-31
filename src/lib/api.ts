@@ -166,7 +166,6 @@ export async function submitFeedback(payload: FeedbackPayload): Promise<{ status
     body: JSON.stringify(payload),
   });
 }
-
 // ─── Master data ───────────────────────────────────────────────────────────
 
 export async function getFaculties(): Promise<string[]> {
