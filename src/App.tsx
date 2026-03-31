@@ -48,7 +48,12 @@ export default function App() {
   const [isSessionsLoading, setIsSessionsLoading] = useState(false);
   const [isSessionLoading, setIsSessionLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth > 768;
+    }
+    return true;
+  });
   const [chatLimit, setChatLimit] = useState<ChatLimit | null>(null);
 
   // ─── Auth handlers ────────────────────────────────────────────────────────

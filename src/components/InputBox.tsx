@@ -37,7 +37,7 @@ export default function InputBox({
   };
 
   return (
-    <div className="border-t border-slate-200 bg-white px-4 py-4 md:px-8">
+    <div className="border-t border-slate-200 bg-white px-3 py-3 md:px-8 md:py-4">
       {selectedPapers.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2">
           {selectedPapers.map((paper) => (
@@ -82,10 +82,10 @@ export default function InputBox({
             type="button"
             onClick={handleSubmit}
             disabled={isSending || message.trim().length === 0}
-            className="h-10 px-4"
+            className="h-10 px-3 sm:px-4 shrink-0 transition-all"
           >
-            <SendHorizonal className="mr-2 h-4 w-4" />
-            Kirim
+            <SendHorizonal className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Kirim</span>
           </Button>
         </div>
       </div>

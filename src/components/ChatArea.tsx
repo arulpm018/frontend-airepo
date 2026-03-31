@@ -87,7 +87,7 @@ export default function ChatArea({
       {/* Scrollable messages area */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-4 pb-6 pt-6 md:px-8"
+        className="flex-1 overflow-y-auto px-4 pb-6 pt-14 md:pt-6 md:px-8"
       >
         {isLoadingSession ? (
           <div className="space-y-4">
